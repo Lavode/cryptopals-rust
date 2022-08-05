@@ -26,6 +26,16 @@ fn load_challenges() -> HashMap<(u32, u32), Challenge> {
         },
     );
 
+    chalenges.insert(
+        (1, 3),
+        Challenge {
+            set: 1,
+            id: 3,
+            title: String::from("Single-byte XOR cipher"),
+            func: single_byte_xor,
+        }
+    );
+
     challenges
 }
 
@@ -62,6 +72,11 @@ fn fixed_xor() {
         hex::encode(symmetric::xor(a, b).expect("xor() returned error")),
         "746865206b696420646f6e277420706c6179",
     )
+}
+
+// 1 - 3
+fn single_byte_xor {
+
 }
 
 struct Challenge {

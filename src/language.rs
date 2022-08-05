@@ -1,5 +1,46 @@
-use std::collections::HashMap;
+use phf::phf_map;
+use std::collections::{HashMap, HashSet};
 
+/// Average frequencies of letters in the English language.
+///
+/// Based on
+/// http://www.practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/english-letter-frequencies/,
+/// with the frequency of the space character added by assuming an average word length of six
+/// characters.
+static ENGLISH: phf::Map<char, f64> = phf_map! {
+    ' ' => 0.16666666666666666,
+    'a' => 0.09037099672339077,
+    'b' => 0.01691153155057605,
+    'c' => 0.0334002748123877,
+    'd' => 0.04090476693795582,
+    'e' => 0.12789345735123137,
+    'f' => 0.02304196173765987,
+    'g' => 0.02209068808793996,
+    'h' => 0.05242574780678575,
+    'i' => 0.07747595391607652,
+    'j' => 0.0023253355882042067,
+    'k' => 0.008561462847479126,
+    'l' => 0.04449846739245323,
+    'm' => 0.026741359264348376,
+    'n' => 0.07578480076101891,
+    'o' => 0.02187929394355776,
+    'p' => 0.02187929394355776,
+    'q' => 0.0010569707219110032,
+    'r' => 0.0669062466969665,
+    's' => 0.07113412958461052,
+    't' => 0.09449318253884367,
+    'u' => 0.028326815347214884,
+    'v' => 0.011203889652256634,
+    'w' => 0.019342564210971358,
+    'x' => 0.002008244371630906,
+    'y' => 0.018179896416869252,
+    'z' => 0.0011626677941021033,
+};
+
+/// Performs frequency analysis of the chars (unicode scalars) in a string.
+///
+/// As this works on unicode scalars rather than grapheme clusters, you should only expect sensible
+/// results for alphabets where there is a 1:1 correspondence most of the time.
 fn frequency_analysis(text: &str) -> HashMap<char, f64> {
     let counts = count_letters(text);
     let total = counts.values().sum::<u32>() as f64;
@@ -10,6 +51,7 @@ fn frequency_analysis(text: &str) -> HashMap<char, f64> {
         .collect()
 }
 
+/// Counts the occurence of chars (unicode scalars) in a string.
 fn count_letters(text: &str) -> HashMap<char, u32> {
     let mut counts = HashMap::new();
 
@@ -19,6 +61,33 @@ fn count_letters(text: &str) -> HashMap<char, u32> {
     }
 
     counts
+}
+
+/// Calculates the difference between two frequency histograms.
+///
+/// Calculation is based on the Hellinger histogram difference:
+/// 1/sqrt(2) * sqrt[SUM{(sqrt(p_i) - sqrt(q_i))^2}]
+///
+/// Two equal histograms will have a difference of 0, while two completely disjoint ones will have
+/// a difference of 1.
+pub fn histogram_difference(a: &HashMap<char, f64>, b: &HashMap<char, f64>) -> f64 {
+    // If we don't specify the type, inference of the hasher type will fail. See
+    // https://stackoverflow.com/questions/62949404/cannot-infer-type-for-type-parameter-s-when-using-hashsetfrom-iter
+    let keys = HashSet::<_>::from_iter(a.keys().chain(b.keys()));
+
+    // Hellinger distance is 1/sqrt(2) * sqrt[SUM{(sqrt(p_i) - sqrt(q_i))^2}]
+    let mut dist = 0.0;
+    for k in keys {
+        let p = a.get(k).unwrap_or(&0.0);
+        let q = b.get(k).unwrap_or(&0.0);
+
+        dist += (p.sqrt() - q.sqrt()).powi(2);
+    }
+
+    let sqrt_two = (2.0 as f64).sqrt();
+    dist = dist.sqrt() / sqrt_two;
+
+    dist
 }
 
 #[cfg(test)]
@@ -77,5 +146,31 @@ mod test {
         for (k, v) in freqs {
             assert_approx_eq!(actual.get(&k).expect("Key missing in output"), &v);
         }
+    }
+
+    #[test]
+    fn histogram_difference() {
+        let a: HashMap<char, f64> = HashMap::from([
+            ('a', 0.3),
+            ('b', 0.1),
+            ('c', 0.2),
+            ('d', 0.25),
+            ('e', 0.05),
+            ('f', 0.1),
+        ]);
+
+        let b: HashMap<char, f64> = HashMap::from([('g', 0.5), ('h', 0.5)]);
+
+        let c: HashMap<char, f64> = HashMap::from([
+            ('a', 0.15),
+            ('c', 0.35),
+            ('d', 0.30),
+            ('f', 0.15),
+            ('i', 0.05),
+        ]);
+
+        assert_approx_eq!(super::histogram_difference(&a, &a), 0.0);
+        assert_approx_eq!(super::histogram_difference(&a, &b), 1.0);
+        assert_approx_eq!(super::histogram_difference(&a, &c), 0.35631035439043124);
     }
 }
