@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+pub mod analysis;
 pub mod cli;
 pub mod language;
 pub mod symmetric;
@@ -26,14 +27,14 @@ fn load_challenges() -> HashMap<(u32, u32), Challenge> {
         },
     );
 
-    chalenges.insert(
+    challenges.insert(
         (1, 3),
         Challenge {
             set: 1,
             id: 3,
             title: String::from("Single-byte XOR cipher"),
             func: single_byte_xor,
-        }
+        },
     );
 
     challenges
@@ -69,14 +70,23 @@ fn fixed_xor() {
     let b = hex::decode("686974207468652062756c6c277320657965").expect("Invalid input");
 
     assert_eq!(
-        hex::encode(symmetric::xor(a, b).expect("xor() returned error")),
+        hex::encode(symmetric::xor(&a, &b).expect("xor() returned error")),
         "746865206b696420646f6e277420706c6179",
     )
 }
 
 // 1 - 3
-fn single_byte_xor {
+fn single_byte_xor() {
+    let ctxt = hex::decode("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
+        .expect("Invalid input");
 
+    let (key, msg, distance) = analysis::single_byte_xor(&ctxt);
+    // Assuming it to be UTF-8 encoded
+    let msg = String::from_utf8_lossy(&msg);
+    println!(
+        "Broke single-byte XOR. Most likely key: {} (distance = {})\nMessage: {}",
+        key, distance, msg
+    );
 }
 
 struct Challenge {

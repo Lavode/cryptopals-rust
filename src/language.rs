@@ -1,4 +1,3 @@
-use phf::phf_map;
 use std::collections::{HashMap, HashSet};
 
 /// Average frequencies of letters in the English language.
@@ -7,41 +6,44 @@ use std::collections::{HashMap, HashSet};
 /// http://www.practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/english-letter-frequencies/,
 /// with the frequency of the space character added by assuming an average word length of six
 /// characters.
-static ENGLISH: phf::Map<char, f64> = phf_map! {
-    ' ' => 0.16666666666666666,
-    'a' => 0.09037099672339077,
-    'b' => 0.01691153155057605,
-    'c' => 0.0334002748123877,
-    'd' => 0.04090476693795582,
-    'e' => 0.12789345735123137,
-    'f' => 0.02304196173765987,
-    'g' => 0.02209068808793996,
-    'h' => 0.05242574780678575,
-    'i' => 0.07747595391607652,
-    'j' => 0.0023253355882042067,
-    'k' => 0.008561462847479126,
-    'l' => 0.04449846739245323,
-    'm' => 0.026741359264348376,
-    'n' => 0.07578480076101891,
-    'o' => 0.02187929394355776,
-    'p' => 0.02187929394355776,
-    'q' => 0.0010569707219110032,
-    'r' => 0.0669062466969665,
-    's' => 0.07113412958461052,
-    't' => 0.09449318253884367,
-    'u' => 0.028326815347214884,
-    'v' => 0.011203889652256634,
-    'w' => 0.019342564210971358,
-    'x' => 0.002008244371630906,
-    'y' => 0.018179896416869252,
-    'z' => 0.0011626677941021033,
-};
+pub fn english_frequencies() -> HashMap<char, f64> {
+    let mut freqs: HashMap<char, f64> = HashMap::new();
+    freqs.insert(' ', 0.16666666666666666);
+    freqs.insert('a', 0.09037099672339077);
+    freqs.insert('b', 0.01691153155057605);
+    freqs.insert('c', 0.0334002748123877);
+    freqs.insert('d', 0.04090476693795582);
+    freqs.insert('e', 0.12789345735123137);
+    freqs.insert('f', 0.02304196173765987);
+    freqs.insert('g', 0.02209068808793996);
+    freqs.insert('h', 0.05242574780678575);
+    freqs.insert('i', 0.07747595391607652);
+    freqs.insert('j', 0.0023253355882042067);
+    freqs.insert('k', 0.008561462847479126);
+    freqs.insert('l', 0.04449846739245323);
+    freqs.insert('m', 0.026741359264348376);
+    freqs.insert('n', 0.07578480076101891);
+    freqs.insert('o', 0.02187929394355776);
+    freqs.insert('p', 0.02187929394355776);
+    freqs.insert('q', 0.0010569707219110032);
+    freqs.insert('r', 0.0669062466969665);
+    freqs.insert('s', 0.07113412958461052);
+    freqs.insert('t', 0.09449318253884367);
+    freqs.insert('u', 0.028326815347214884);
+    freqs.insert('v', 0.011203889652256634);
+    freqs.insert('w', 0.019342564210971358);
+    freqs.insert('x', 0.002008244371630906);
+    freqs.insert('y', 0.018179896416869252);
+    freqs.insert('z', 0.0011626677941021033);
+
+    freqs
+}
 
 /// Performs frequency analysis of the chars (unicode scalars) in a string.
 ///
 /// As this works on unicode scalars rather than grapheme clusters, you should only expect sensible
 /// results for alphabets where there is a 1:1 correspondence most of the time.
-fn frequency_analysis(text: &str) -> HashMap<char, f64> {
+pub fn frequency_analysis(text: &str) -> HashMap<char, f64> {
     let counts = count_letters(text);
     let total = counts.values().sum::<u32>() as f64;
 
