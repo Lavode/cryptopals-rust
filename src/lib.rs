@@ -1,12 +1,16 @@
-use std::collections::HashMap;
-
 pub mod analysis;
-pub mod cli;
 pub mod language;
+pub mod launcher;
 pub mod symmetric;
 
-fn load_challenges() -> HashMap<(u32, u32), Challenge> {
-    let mut challenges: HashMap<(u32, u32), Challenge> = HashMap::new();
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{self, BufRead},
+};
+
+fn load_challenges() -> HashMap<(usize, usize), Challenge> {
+    let mut challenges: HashMap<(usize, usize), Challenge> = HashMap::new();
     challenges.insert(
         (1, 1),
         Challenge {
@@ -37,13 +41,23 @@ fn load_challenges() -> HashMap<(u32, u32), Challenge> {
         },
     );
 
+    challenges.insert(
+        (1, 4),
+        Challenge {
+            set: 1,
+            id: 4,
+            title: String::from("Detect single-character XOR"),
+            func: detect_single_byte_xor,
+        },
+    );
+
     challenges
 }
 
-pub fn run(opts: cli::Options) {
+pub fn run(cli: &launcher::cli::CLI) {
     let challenges = load_challenges();
 
-    let id: (u32, u32) = (opts.set(), opts.challenge());
+    let id = (cli.set, cli.challenge);
     let challenge = challenges.get(&id);
 
     match challenge {
@@ -86,6 +100,35 @@ fn single_byte_xor() {
     println!(
         "Broke single-byte XOR. Most likely key: {} (distance = {})\nMessage: {}",
         key, distance, msg
+    );
+}
+
+fn detect_single_byte_xor() {
+    let lines =
+        io::BufReader::new(File::open("data/1_4.txt").expect("Error reading file 1_4.txt")).lines();
+
+    let mut best_key: u8 = 0;
+    let mut best_msg: Vec<u8> = vec![0];
+    let mut lowest_distance: f64 = 1.0;
+
+    for line in lines {
+        if let Ok(line) = line {
+            let ctxt = hex::decode(line).expect("Input line was not hex-encoded");
+            let (key, msg, distance) = analysis::single_byte_xor(&ctxt);
+
+            if distance < lowest_distance {
+                best_key = key;
+                best_msg = msg;
+                lowest_distance = distance;
+            }
+        }
+    }
+
+    // Assuming it to be UTF-8 encoded
+    let best_msg = String::from_utf8_lossy(&best_msg);
+    println!(
+        "Found most-likely single-byte XOR cipher. Key: {} (distance = {})\nMessage: {}",
+        best_key, lowest_distance, best_msg
     );
 }
 
