@@ -1,3 +1,5 @@
+pub mod vigenere;
+
 /// Calculates the byte-wise XOR of two byte vectors of equal length.
 ///
 /// An error is returned if the two inputs differ in length.

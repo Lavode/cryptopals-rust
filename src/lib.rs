@@ -1,9 +1,3 @@
-pub mod analysis;
-pub mod error;
-pub mod language;
-pub mod launcher;
-pub mod symmetric;
-
 use std::{
     collections::HashMap,
     fs::File,
@@ -11,6 +5,13 @@ use std::{
 };
 
 use error::Error;
+use symmetric::vigenere::Vigenere;
+
+pub mod analysis;
+pub mod error;
+pub mod language;
+pub mod launcher;
+pub mod symmetric;
 
 fn load_challenges() -> HashMap<(usize, usize), Challenge> {
     let mut challenges: HashMap<(usize, usize), Challenge> = HashMap::new();
@@ -54,6 +55,16 @@ fn load_challenges() -> HashMap<(usize, usize), Challenge> {
         },
     );
 
+    challenges.insert(
+        (1, 5),
+        Challenge {
+            set: 1,
+            id: 5,
+            title: String::from("Repeating-key XOR cipher"),
+            func: repeating_key_xor,
+        },
+    );
+
     challenges
 }
 
@@ -84,6 +95,7 @@ fn hex_to_base64() -> Result<(), Error> {
         b64,
         "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
     );
+    println!("Passed");
 
     Ok(())
 }
@@ -97,6 +109,7 @@ fn fixed_xor() -> Result<(), Error> {
         hex::encode(symmetric::xor(&a, &b).expect("xor() returned error")),
         "746865206b696420646f6e277420706c6179",
     );
+    println!("Passed");
 
     Ok(())
 }
@@ -117,6 +130,7 @@ fn single_byte_xor() -> Result<(), Error> {
     Ok(())
 }
 
+// 1 - 4
 fn detect_single_byte_xor() -> Result<(), Error> {
     let lines =
         io::BufReader::new(File::open("data/1_4.txt").expect("Error reading file 1_4.txt")).lines();
@@ -144,6 +158,26 @@ fn detect_single_byte_xor() -> Result<(), Error> {
         "Found most-likely single-byte XOR cipher. Key: {} (distance = {})\nMessage: {}",
         best_key, lowest_distance, best_msg
     );
+
+    Ok(())
+}
+
+// 1 - 5
+fn repeating_key_xor() -> Result<(), Error> {
+    let msg = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
+        .as_bytes()
+        .to_vec();
+
+    let expected = hex::decode(
+        "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f",
+    )
+    .map_err(|e| Error::DataError(format!("{}", e)))?;
+
+    let cipher = Vigenere::new("ICE".as_bytes().to_vec());
+    let ctxt = cipher.encrypt(msg);
+
+    assert_eq!(ctxt, expected);
+    println!("Passed");
 
     Ok(())
 }
